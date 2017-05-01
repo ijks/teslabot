@@ -3,7 +3,9 @@ extern crate discord;
 use std::env;
 
 use discord::Discord;
-use discord::model::Event;
+use discord::model::{Channel, Event, Message};
+
+const CHANNELS: &[&str] = &["bot-testing"];
 
 fn main() {
     let token = env::var("DISCORD_TOKEN").expect("login token not set");
@@ -17,10 +19,10 @@ fn main() {
     loop {
         match connection.recv_event() {
             Ok(Event::MessageCreate(message)) => {
-                if message.content == "!hello" {
-                    println!("Got !hello from '{}'.", message.author.name);
-                    let response = format!("Hello, {}!", message.author.name);
-                    discord.send_message(message.channel_id, &response, "", false);
+                if let Channel::Public(channel) = discord.get_channel(message.channel_id).unwrap() {
+                    if CHANNELS.contains(&channel.name.as_str()) {
+                        handle_message(&discord, &message);
+                    }
                 }
             }
             Ok(_) => {}
@@ -29,5 +31,12 @@ fn main() {
                 break;
             }
         }
+    }
+}
+
+fn handle_message(discord: &Discord, message: &Message) {
+    if message.content == "!hello" {
+        let response = format!("Hello, {}!", message.author.name);
+        discord.send_message(message.channel_id, &response, "", false);
     }
 }
