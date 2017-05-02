@@ -20,14 +20,11 @@ lazy_static! {
         prefix: '!';
 
         hello(discord, message, params) => {
-            if params.len() > 1 {
-                return Response::UserError("too many parameters".into());
-            }
-
             let author = &message.author.name;
-            let response = match params.get(0) {
-                Some(name) => format!("Hello from {}, {}!", author, name),
-                None => format!("Hello, {}!", author),
+            let response = if params.len() == 0 {
+                format!("Hello, {}!", author)
+            } else {
+                format!("Hello from {}, {}!", author, params.join(" "))
             };
 
             Response::Respond(response)
