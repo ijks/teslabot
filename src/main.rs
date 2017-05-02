@@ -1,5 +1,7 @@
 extern crate discord;
 
+#[macro_use]
+mod macros;
 mod respond;
 
 use std::env;
