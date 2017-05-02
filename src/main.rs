@@ -1,4 +1,6 @@
 extern crate discord;
+#[macro_use]
+extern crate lazy_static;
 
 #[macro_use]
 mod macros;
@@ -9,7 +11,29 @@ use std::env;
 use discord::Discord;
 use discord::model::{Channel, Event, Message};
 
+use respond::{Commands, Respond, Response};
+
 const CHANNELS: &[&str] = &["bot-testing"];
+
+lazy_static! {
+    static ref COMMANDS: Commands = commands! {
+        prefix: '!';
+
+        hello(discord, message, params) => {
+            if params.len() > 1 {
+                return Response::UserError("too many parameters".into());
+            }
+
+            let author = &message.author.name;
+            let response = match params.get(0) {
+                Some(name) => format!("Hello from {}, {}!", author, name),
+                None => format!("Hello, {}!", author),
+            };
+
+            Response::Respond(response)
+        }
+    };
+}
 
 fn main() {
     let token = env::var("DISCORD_TOKEN").expect("login token not set");
@@ -23,9 +47,26 @@ fn main() {
     loop {
         match connection.recv_event() {
             Ok(Event::MessageCreate(message)) => {
+                // TODO: break more stuff out into functions
                 if let Channel::Public(channel) = discord.get_channel(message.channel_id).unwrap() {
-                    if CHANNELS.contains(&channel.name.as_str()) {
-                        handle_message(&discord, &message);
+                    if !CHANNELS.contains(&channel.name.as_str()) {
+                        continue
+                    }
+
+                    if let Some(response) = COMMANDS.respond(&discord, &message) {
+                        match response {
+                            Response::Respond(msg) => {
+                                discord.send_message(message.channel_id, &msg, "", false);
+                            }
+                            Response::UserError(error) => {
+                                let msg = format!("Error: {}", error);
+                                discord.send_message(message.channel_id, &msg, "", false);
+                            }
+                            Response::InternalError(error) => {
+                                println!("Got error: {:?}", error);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -35,12 +76,5 @@ fn main() {
                 break;
             }
         }
-    }
-}
-
-fn handle_message(discord: &Discord, message: &Message) {
-    if message.content == "!hello" {
-        let response = format!("Hello, {}!", message.author.name);
-        discord.send_message(message.channel_id, &response, "", false);
     }
 }
