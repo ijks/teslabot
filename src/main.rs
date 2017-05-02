@@ -1,5 +1,7 @@
 extern crate discord;
 
+mod respond;
+
 use std::env;
 
 use discord::Discord;
