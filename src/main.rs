@@ -1,6 +1,7 @@
 extern crate discord;
 #[macro_use]
 extern crate lazy_static;
+extern crate rand;
 
 #[macro_use]
 mod macros;
@@ -10,6 +11,7 @@ use std::env;
 
 use discord::Discord;
 use discord::model::{Channel, Event, Message};
+use rand::Rng;
 
 use respond::{Commands, Respond, Response};
 
@@ -28,6 +30,23 @@ lazy_static! {
             };
 
             Response::Respond(response)
+        }
+
+        coinflip(discord, message, params) => {
+            const DEFAULT_OPTIONS: &[&str] = &["heads", "tails"];
+
+            let options = match params.len() {
+                0 => DEFAULT_OPTIONS,
+                2 => params,
+                l => return Response::UserError(
+                    format!("wrong amount of arguments: {}", l)
+                ),
+            };
+
+            // We just made sure `options` isn't empty, so unwrapping is fine here.
+            let result = rand::thread_rng().choose(options).unwrap();
+
+            Response::Respond(result.to_string())
         }
     };
 }

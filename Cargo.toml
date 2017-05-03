@@ -4,5 +4,6 @@ name = "teslabot"
 version = "0.1.0"
 
 [dependencies]
-lazy_static = "0.2.8"
 discord = { version = "0.8.0", default-features = false }
+lazy_static = "0.2.8"
+rand = "0.3.15"
