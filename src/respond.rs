@@ -5,11 +5,12 @@ use discord;
 use discord::Discord;
 use discord::model::{Message, User};
 
+// TODO: remove this enum. We can just use Result with our custom Error type.
 #[derive(Debug)]
 pub enum Response {
     Respond(String),
     UserError(String),
-    InternalError(discord::Error), // TODO: use our own error type, using e.g. error-chain
+    InternalError(discord::Error),
 }
 
 impl From<Result<String, discord::Error>> for Response {

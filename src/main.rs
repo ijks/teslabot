@@ -1,8 +1,11 @@
 extern crate discord;
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate lazy_static;
 extern crate rand;
 
+mod errors;
 #[macro_use]
 mod macros;
 mod respond;
