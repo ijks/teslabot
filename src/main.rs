@@ -16,6 +16,7 @@ use discord::Discord;
 use discord::model::{Channel, Event, Message};
 use rand::Rng;
 
+use errors::*;
 use command::{Command, Commands};
 use respond::{Respond, Response};
 
@@ -33,7 +34,7 @@ lazy_static! {
                 format!("Hello from {}, {}!", author, params.join(" "))
             };
 
-            Response::Respond(response)
+            Ok(response)
         }
 
         coinflip(discord, message, params) => {
@@ -42,15 +43,15 @@ lazy_static! {
             let options = match params.len() {
                 0 => DEFAULT_OPTIONS,
                 2 => params,
-                l => return Response::UserError(
-                    format!("wrong amount of arguments: {}", l)
+                l => bail!(
+                    ErrorKind::UserError(format!("wrong amount of arguments: {}", l))
                 ),
             };
 
             // We just made sure `options` isn't empty, so unwrapping is fine here.
             let result = rand::thread_rng().choose(options).unwrap();
 
-            Response::Respond(result.to_string())
+            Ok(result.to_string())
         }
     };
 }
@@ -73,19 +74,18 @@ fn main() {
                         continue
                     }
 
-                    if let Some(response) = COMMANDS.respond(&discord, &message) {
-                        match response {
-                            Response::Respond(msg) => {
-                                discord.send_message(message.channel_id, &msg, "", false);
-                            }
-                            Response::UserError(error) => {
-                                let msg = format!("Error: {}", error);
-                                discord.send_message(message.channel_id, &msg, "", false);
-                            }
-                            Response::InternalError(error) => {
-                                println!("Got error: {:?}", error);
-                                break;
-                            }
+                    match COMMANDS.respond(&discord, &message) {
+                        Ok(Some(msg)) => {
+                            discord.send_message(message.channel_id, &msg, "", false);
+                        }
+                        Ok(None) => {} // Nothing went wrong, but we're not responding either.
+                        Err(Error(ErrorKind::UserError(error), _)) => {
+                            let msg = format!("Error: {}", error);
+                            discord.send_message(message.channel_id, &msg, "", false);
+                        }
+                        Err(error) => {
+                            println!("Got error: {:?}", error);
+                            break;
                         }
                     }
                 }

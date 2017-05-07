@@ -75,12 +75,11 @@ stuff defined using normal syntax.
 ### Commands
 
 Commands are currently just an fn-pointer that take (mainly) a list of
-arguments, and return a `Response`. Firstly, I'm going to remove `Response`,
-to be replaced by a good ole' `Result<T>`. Secondly, it would be nice to
-define commands more strictly, by specifying all their arguments and,
-possibly, types. I'm not sure where this would be on the dynamic-static
-scale. Doing a lot at compile time is nice, but users might want to define
-their own commands through some interface.
+arguments, and return a `Response`. It would be nice to define commands more
+strictly, by specifying all their arguments and, possibly, types. I'm not
+sure where this would be on the dynamic-static scale. Doing a lot at compile
+time is nice, but users might want to define their own commands through some
+interface.
 
 Commands will probably defined by a trait. Something like:
 

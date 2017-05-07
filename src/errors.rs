@@ -6,9 +6,9 @@ error_chain! {
     errors {
         // TODO: this could be more granular. something like CommandError, with
         // sub-errors like ArgumentCount &c
-        UserError(e: String) {
+        UserError(error: String) {
             description("an error caused by a user")
-            display("{}", e)
+            display("{}", error)
         }
     }
 }

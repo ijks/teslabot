@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use discord::Discord;
 use discord::model::Message;
 
+use errors::*;
 use respond::{Respond, Response};
 
-pub type Command = fn(&Discord, &Message, &[&str]) -> Response;
+pub type Command = fn(&Discord, &Message, &[&str]) -> Result<String>;
 
 pub struct Commands {
     prefix: char,
@@ -19,22 +20,22 @@ impl Commands {
 }
 
 impl Respond for Commands {
-    fn respond(&self, discord: &Discord, message: &Message) -> Option<Response> {
+    fn respond(&self, discord: &Discord, message: &Message) -> Response {
         let text = &message.content;
         if !text.starts_with(self.prefix) {
-            return None;
+            return Ok(None);
         }
 
         let split: Vec<_> = text.split_whitespace().collect();
         let command = split[0];
         let params = &split[1..];
 
-        let response = match self.commands.get(&command[1..]) {
-            Some(cmd) => cmd(discord, message, params),
-            None => Response::UserError(format!("unrecognized command: '{}'", command))
-        };
-
-        Some(response)
+        match self.commands.get(&command[1..]) {
+            Some(cmd) => cmd(discord, message, params).map(Some),
+            None => bail!(
+                ErrorKind::UserError(format!("unrecognized command: '{}'", command))
+            ),
+        }
     }
 }
 
@@ -63,7 +64,7 @@ macro_rules! commands {
 macro_rules! command_fn {
     ($name:ident, $discord:ident, $msg:ident, $params:ident, $body:block) => {
         fn $name($discord: &::discord::Discord, $msg: &::discord::model::Message, $params: &[&str])
-            -> $crate::respond::Response {
+            -> $crate::errors::Result<String> {
             $body
         }
     }
