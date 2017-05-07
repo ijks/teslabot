@@ -5,9 +5,9 @@ extern crate error_chain;
 extern crate lazy_static;
 extern crate rand;
 
-mod errors;
 #[macro_use]
-mod macros;
+mod command;
+mod errors;
 mod respond;
 
 use std::env;
@@ -16,7 +16,8 @@ use discord::Discord;
 use discord::model::{Channel, Event, Message};
 use rand::Rng;
 
-use respond::{Commands, Respond, Response};
+use command::{Command, Commands};
+use respond::{Respond, Response};
 
 const CHANNELS: &[&str] = &["bot-testing"];
 
