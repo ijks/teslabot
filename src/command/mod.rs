@@ -3,10 +3,58 @@ use std::collections::HashMap;
 use discord::Discord;
 use discord::model::Message;
 
-use errors::*;
+use errors;
 use respond::{Respond, Response};
+use self::errors::*;
 
-pub type Command = fn(&Discord, &Message, &[&str]) -> Result<String>;
+// pub type Command = fn(&Discord, &Message, &[&str]) -> Result<String>;
+
+pub trait Command {
+    type Args: Argument;
+
+    fn execute(&mut self, discord: &Discord, message: &Message, args: Self::Args)
+        -> errors::Result<String>;
+}
+
+pub trait Argument {
+    fn parse(arguments: &str) -> Result<Self>;
+}
+
+impl Argument for () {
+    fn parse(arguments: &str) -> Result<Self> {
+        ensure!(arguments == "",
+            ErrorKind::InvalidArgument("this command takes no arguments"));
+
+        Ok(())
+    }
+}
+
+impl<T> Argument for T
+    where T: FromStr
+{
+    fn parse(arguments: &str) -> Result<Self> {
+        FromStr::from_str(arguments).map_err(Into::into)
+    }
+}
+
+impl<T, 'a> Argument for &'a [T]
+    where T: Argument
+{
+    fn parse(arguments: &str) -> Result<Self> {
+        arguments.split_whitespace().map(Arguments::parse).collect()
+    }
+}
+
+impl<T> Argument for Option<T>
+    where T: Argument
+{
+    fn parse(arguments: &str) -> Result<Self> {
+        match arguments {
+            "" => Ok(None),
+            arg => Argument::parse(arg).map(Some),
+        }
+    }
+}
 
 pub struct Commands {
     prefix: char,
